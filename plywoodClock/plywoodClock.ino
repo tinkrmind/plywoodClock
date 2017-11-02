@@ -9,7 +9,7 @@
 
 RTC_DS3231 rtc;
 
-#include <Adafruit_NeoPixel.h>
+#include "Adafruit_NeoPixel.h"
 #ifdef __AVR__
 #include <avr/power.h>
 #endif

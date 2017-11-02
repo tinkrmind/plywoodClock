@@ -1,0 +1,78 @@
+#######################################
+# Syntax Coloring Map For RTC
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+DateTime	KEYWORD1
+RTC_DS1307	KEYWORD1
+RTC_Millis	KEYWORD1
+Ds1307SqwPinMode	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+year	KEYWORD2
+month	KEYWORD2
+day	KEYWORD2
+hour	KEYWORD2
+minute	KEYWORD2
+second	KEYWORD2
+dayOfWeek	KEYWORD2
+secondstime	KEYWORD2
+unixtime	KEYWORD2
+begin	KEYWORD2
+adjust	KEYWORD2
+isrunning	KEYWORD2
+now	KEYWORD2
+readSqwPinMode	KEYWORD2
+writeSqwPinMode	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+
+#######################################
+# Syntax Coloring Map For Adafruit_NeoPixel
+####################################### 
+# Class
+#######################################
+
+Adafruit_NeoPixel	KEYWORD1
+
+#######################################
+# Methods and Functions 
+#######################################	
+
+setPixelColor	KEYWORD2
+setPin			KEYWORD2
+setBrightness	KEYWORD2
+numPixels		KEYWORD2
+getPixelColor	KEYWORD2
+Color			KEYWORD2
+show			KEYWORD2
+
+clear			KEYWORD2
+updateLength			KEYWORD2
+updateType			KEYWORD2
+getPixels			KEYWORD2
+getBrightness			KEYWORD2
+getPin			KEYWORD2
+canShow			KEYWORD2
+
+
+#######################################
+# Constants
+#######################################
+
+NEO_COLMASK		LITERAL1
+NEO_SPDMASK		LITERAL1
+NEO_KHZ800		LITERAL1
+NEO_KHZ400		LITERAL1
+NEO_GRB			LITERAL1
+NEO_RGB			LITERAL1
+NEO_RGBW			LITERAL1
