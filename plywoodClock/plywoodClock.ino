@@ -64,6 +64,8 @@ void loop () {
   Serial.print(now.hour(), DEC);
   Serial.print(':');
   Serial.print(now.minute(), DEC);
+  Serial.print(':');
+  Serial.print(now.second(), DEC);
   Serial.println();
 
   showTime();
@@ -85,11 +87,12 @@ void showTime() {
   DateTime now = rtc.now();
   
   hourPixel = now.hour() % 12;
-  minutePixel = (now.minute() / 5) % 12 + 12;
+  minutePixel = round(float(now.minute()) / 5.0) % 12 + 12;
   
   clear();
   strip.setPixelColor(hourPixel, strip.Color(40 + 40 * level[hourPixel], 30 + 30 * level[hourPixel], 20 + 20 * level[hourPixel]));
   strip.setPixelColor(minutePixel, strip.Color(40 + 40 * level[minutePixel], 30 + 30 * level[minutePixel], 20 + 20 * level[minutePixel]));
+//  lightUp(strip.Color(255, 255, 255));
   strip.show();
 }
 
