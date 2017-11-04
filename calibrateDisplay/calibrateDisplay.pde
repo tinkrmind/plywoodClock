@@ -15,15 +15,24 @@ int rTemp, gTemp, bTemp, aTemp;
 PImage ourImage;
 
 int runNumber = 0;
+int acceptableError = 3;
 
-int[] numPixelsInLed = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-long[] ledIntensity = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-int[] ledPower = {255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255};
+int[] done;
+int[] numPixelsInLed;
+long[] ledIntensity;
+int[] ledPower;
 long targetIntensity = 99999999;
 
 void setup() {
+  done = new int[numLed];
+  numPixelsInLed = new int[numLed];
+  ledIntensity = new long[numLed];
+  ledPower = new int[numLed];
+  for (int i=0; i<numLed; i++) {
+    ledPower[i] = 255;
+  }
   printArray(Serial.list());
-  String portName = Serial.list()[32];
+  String portName = Serial.list()[31];
   myPort = new Serial(this, portName, 9600);
 
   size(640, 480);
@@ -31,105 +40,145 @@ void setup() {
   video.start();  
   noStroke();
   smooth();
-  delay(1000);
+  delay(1000); // Wait for serial port to open
 }
 
 void draw() {
   if (video.available()) {
-    clearDisplay();
-    delay(300);
-    video.read();
-    image(video, 0, 0, width, height); // Draw the webcam video onto the screen
-    saveFrame("data/no_leds.jpg");
+    if (done[ledNum] == 0) {
+      clearDisplay();
+      delay(1000);
+      video.read();
+      image(video, 0, 0, width, height); // Draw the webcam video onto the screen
+      saveFrame("data/no_leds.jpg");
 
-    if (runNumber != 0) {
-      if (ledIntensity[ledNum] > targetIntensity) {
-        ledPower[ledNum] -= pow(0.8, runNumber)*100+1;
-      }
-      if (ledIntensity[ledNum] < targetIntensity) {
-        ledPower[ledNum] += pow(0.8, runNumber)*50+1;
+      if (runNumber != 0) {
+        if ((ledIntensity[ledNum] - targetIntensity)*100/targetIntensity > acceptableError) {
+          ledPower[ledNum] -= pow(0.75, runNumber)*100+1;
+        }
+        if ((targetIntensity - ledIntensity[ledNum])*100/targetIntensity > acceptableError) {
+          ledPower[ledNum] += pow(0.75, runNumber)*100+1;
+        }
+        if (abs(targetIntensity - ledIntensity[ledNum])*100/targetIntensity <= acceptableError) {
+          done[ledNum] = 1;
+          print("Led ");
+          print(ledNum);
+          print(" done");
+        }
+
+        if (ledPower[ledNum] > 255) {
+          ledPower[ledNum] = 255;
+        }
+        if (ledPower[ledNum] < 0) {
+          ledPower[ledNum]= 0;
+        }
       }
 
-      if (ledPower[ledNum] > 255) {
-        ledPower[ledNum] = 255;
+      setLedPower(ledNum, ledPower[ledNum]);
+      delay(1000);
+      video.read();
+      image(video, 0, 0, width, height); // Draw the webcam video onto the screen
+      delay(10);
+
+      while (myPort.available() > 0) {
+        int inByte = myPort.read();
+        //print(char(inByte));
       }
-      if (ledPower[ledNum] < 0) {
-        ledPower[ledNum]= 0;
+
+      String imageName = "data/";
+
+      imageName+= str(ledNum);
+      imageName += "_led.jpg";
+
+      saveFrame(imageName);
+
+      String originalImageName = "data/org";
+      originalImageName+= str(ledNum);
+      originalImageName += ".jpg";
+
+      if (runNumber == 0) {
+        saveFrame(originalImageName);
       }
+
+      PImage noLedImg = loadImage("data/no_leds.jpg");
+      PImage ledImg = loadImage(imageName);
+      PImage originalImg = loadImage(originalImageName);
+
+      noLedImg.loadPixels();
+      ledImg.loadPixels();
+      originalImg.loadPixels();
+
+      background (0);
+      loadPixels(); 
+
+      ledIntensity[ledNum] = 0;
+      numPixelsInLed[ledNum] = 0;
+
+      for (int x = 0; x<width; x++) {
+        for (int y = 0; y<height; y++) {
+          PxPGetPixelDark(x, y, noLedImg.pixels, width);
+          PxPGetPixelLed(x, y, ledImg.pixels, width);
+          PxPGetPixelOrg(x, y, originalImg.pixels, width);
+
+          if ((rOrg+gOrg/2+bOrg/3)-(rDark+gDark/2+bDark/3)  > 75) {               
+            ledIntensity[ledNum] = ledIntensity[ledNum] +(rLed+gLed/2+bLed/3) -(rDark+gDark/2+bDark/3);
+            rTemp=255;
+            gTemp=255;
+            bTemp=255;                                     
+            numPixelsInLed[ledNum]++;
+          } else {                                  
+            rTemp= 0;
+            gTemp=0;
+            bTemp=0;
+          }                                              
+
+          PxPSetPixel(x, y, rTemp, gTemp, bTemp, 255, pixels, width);
+        }
+      }
+
+      ledIntensity[ledNum] /= numPixelsInLed[ledNum];
+
+      if (targetIntensity > ledIntensity[ledNum] && runNumber == 0) {
+        targetIntensity = ledIntensity[ledNum];
+      }
+      updatePixels();
     }
 
-    setLedState(ledNum, ledPower[ledNum]);
-    delay(200);
-    video.read();
-    image(video, 0, 0, width, height); // Draw the webcam video onto the screen
-    delay(10);
-
-    while (myPort.available() > 0) {
-      int inByte = myPort.read();
-      //print(char(inByte));
-    }
-
-    String fileName = "data/";
-
-    fileName+= str(ledNum);
-    fileName += "_led.jpg";
-
-    saveFrame(fileName);
-
-    String orgfileName = "data/org";
-    orgfileName+= str(ledNum);
-    orgfileName += "_led.jpg";
-
-    if (runNumber == 0) {
-      saveFrame(orgfileName);
-    }
-
-    PImage noLedImg = loadImage("data/no_leds.jpg");
-    PImage ledImg = loadImage(fileName);
-    PImage orgledImg = loadImage(orgfileName);
-
-    noLedImg.loadPixels();
-    ledImg.loadPixels();
-    orgledImg.loadPixels();
-
-    background (0);
-    loadPixels(); 
-
-    ledIntensity[ledNum] = 0;
-    numPixelsInLed[ledNum] = 0;
-
-    for (int x = 0; x<width; x++) {
-      for (int y = 0; y<height; y++) {
-        PxPGetPixelDark(x, y, noLedImg.pixels, width);
-        PxPGetPixelDarkLed(x, y, ledImg.pixels, width);
-        PxPGetPixelDarkOrg(x, y, orgledImg.pixels, width);
-
-        if ((rOrg+gOrg/2+bOrg/3)-(rDark+gDark/2+bDark/3)  > 75) {               
-          ledIntensity[ledNum] = ledIntensity[ledNum] +(rLed+gLed/2+bLed/3) -(rDark+gDark/2+bDark/3);
-          rTemp=255;
-          gTemp=255;
-          bTemp=255;                                     
-          numPixelsInLed[ledNum]++;
-        } else {                                  
-          rTemp= 0;
-          gTemp=0;
-          bTemp=0;
-        }                                              
-
-        PxPSetPixel(x, y, rTemp, gTemp, bTemp, 255, pixels, width);
-      }
-    }
-
-    if (targetIntensity > ledIntensity[ledNum] && runNumber == 0) {
-      targetIntensity = ledIntensity[ledNum];
-    }
-
+    print(ledNum);
+    print(',');
     print(ledPower[ledNum]);
     print(',');
     println(ledIntensity[ledNum]);
-    updatePixels();
+
     ledNum++;
-    if (ledNum == 12) {
+    if (ledNum == numLed) {
+      int donezo = 0;
+      for (int i=0; i<numLed; i++) {
+        donezo += done[i];
+      }
+
+      if (donezo == numLed) {
+        println("DONE");
+        for (int i=0; i<numLed; i++) {
+          print(i);
+          print(" \t ");
+          println(ledPower[i]);
+        }
+
+        print("int level[");
+        print(ledNum);
+        print("] = {");
+        for (int i=0; i<numLed-1; i++) {
+          print(ledPower[i]);
+          print(',');
+        }
+        print(ledPower[numLed - 1]);
+        println("};");
+
+        lightUpEven();        
+        while (true);
+      }
+
       print("Target intensity: ");
       if (runNumber == 0) {
         targetIntensity -= 1;
@@ -141,40 +190,9 @@ void draw() {
   }
 }
 
-void setLedState(int pixNum, int intensity) {
-  myPort.write('#');
-  myPort.write((pixNum%1000)/100+48);
-  myPort.write((pixNum%100)/10+48);
-  myPort.write(pixNum%10+48);
-  myPort.write(',');
-  myPort.write((intensity%1000)/100+48);
-  myPort.write((intensity%100)/10+48);
-  myPort.write(intensity%10+48);
-  myPort.write('\r');
-  myPort.write('\n');
-}
 
-void clearDisplay() {
-  myPort.write('0');
-  myPort.write('\r');
-  myPort.write('\n');
-}
 
-void lightUpAll() {
-  myPort.write('1');
-  myPort.write('\r');
-  myPort.write('\n');
-}
-
-void lightUpEven() {
-  clearDisplay();
-  for (int i=0; i<numLed; i++) {
-    setLedState(i, ledPower[i]);
-    delay(20);
-  }
-}
-
-void PxPGetPixelDarkOrg(int x, int y, int[] pixelArray, int pixelsWidth) {
+void PxPGetPixelOrg(int x, int y, int[] pixelArray, int pixelsWidth) {
   int thisPixel=pixelArray[x+y*pixelsWidth];     // getting the colors as an int from the pixels[]
   aOrg = (thisPixel >> 24) & 0xFF;                  // we need to shift and mask to get each component alone
   rOrg = (thisPixel >> 16) & 0xFF;                  // this is faster than calling red(), green() , blue()
@@ -190,7 +208,7 @@ void PxPGetPixelDark(int x, int y, int[] pixelArray, int pixelsWidth) {
   bDark = thisPixel & 0xFF;
 }
 
-void PxPGetPixelDarkLed(int x, int y, int[] pixelArray, int pixelsWidth) {
+void PxPGetPixelLed(int x, int y, int[] pixelArray, int pixelsWidth) {
   int thisPixel=pixelArray[x+y*pixelsWidth];     // getting the colors as an int from the pixels[]
   aLed = (thisPixel >> 24) & 0xFF;                  // we need to shift and mask to get each component alone
   rLed = (thisPixel >> 16) & 0xFF;                  // this is faster than calling red(), green() , blue()
@@ -205,3 +223,28 @@ void PxPSetPixel(int x, int y, int r, int g, int b, int a, int[] pixelArray, int
   color argb = a | r | g | b;                 // binary "or" operation adds them all into one int
   pixelArray[x+y*pixelsWidth]= argb;          // finaly we set the int with te colors into the pixels[]
 }
+
+//0    37
+//1    49
+//2    37
+//3    68
+//4    51
+//5    229
+//6    68
+//7    109
+//8    102
+//9    255
+//10    51
+//11    46
+//12    68
+//13    236
+//14    84
+//15    84
+//16    109
+//17    87
+//18    144
+//19    199
+//20    77
+//21    112
+//22    68
+//23    77

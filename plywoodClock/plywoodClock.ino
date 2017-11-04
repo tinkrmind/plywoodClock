@@ -25,11 +25,12 @@ unsigned long lastRtcCheck;
 String inputString = "";         // a string to hold incoming data
 boolean stringComplete = false;  // whether the string is complete
 
-int level[24] = {0, 2, 0, 3, 2, 4,
-                 3, 3, 3, 5, 1, 0,
-                 3, 5, 3, 3, 4, 3,
-                 3, 5, 3, 3, 2, 3
-                };
+//int level[24] = {0, 2, 0, 3, 2, 4,
+//                 3, 3, 3, 5, 1, 0,
+//                 3, 5, 3, 3, 4, 3,
+//                 3, 5, 3, 3, 2, 3
+//                };
+int level[24] = {31,51,37,64,50,224,64,102,95,255,49,44,65,230,80,77,102,87,149,192,67,109,68,77};
 
 void setup () {
 
@@ -93,6 +94,12 @@ void loop () {
   if (stringComplete) {
     Serial.println(inputString);
 
+    if (inputString[0] == 'l') {
+      Serial.println("Level");
+      lightUpEven();
+    }
+
+
     if (inputString[0] == 'c') {
       Serial.println("Showing time");
       showTime();
@@ -111,42 +118,44 @@ void loop () {
       strip.show();
     }
 
+    // #3,255 would set led number 3 to level 255,255,255
     if (inputString[0] == '#') {
       String temp;
+
       temp = inputString.substring(1);
       int pixNum = temp.toInt();
-      Serial.println(inputString.indexOf(','));
+
       temp = inputString.substring(inputString.indexOf(',') + 1);
       int intensity = temp.toInt();
+
       Serial.print("Setting ");
       Serial.print(pixNum);
       Serial.print(" to level ");
       Serial.println(intensity);
 
       strip.setPixelColor(pixNum, strip.Color(intensity, intensity, intensity));
-
       strip.show();
     }
 
+    // #3,255,0,125 would set led number 3 to level 255,0,125
     if (inputString[0] == '$') {
       String temp;
-      
+
       temp = inputString.substring(1);
       int pixNum = temp.toInt();
-      Serial.println(inputString.indexOf(','));
-      
-      int rIndex = inputString.indexOf(',', 1) + 1;
+
+      int rIndex = inputString.indexOf(',') + 1;
       temp = inputString.substring(rIndex);
       int rIntensity = temp.toInt();
 
-      int gIndex = inputString.indexOf(',', rIndex) + 1;
+      int gIndex = inputString.indexOf(',', rIndex + 1) + 1;
       temp = inputString.substring(gIndex);
       int gIntensity = temp.toInt();
 
-      int bIndex = inputString.indexOf(',', gIndex) + 1;
+      int bIndex = inputString.indexOf(',', gIndex + 1) + 1;
       temp = inputString.substring(bIndex);
       int bIntensity = temp.toInt();
-      
+
       Serial.print("Setting ");
       Serial.print(pixNum);
       Serial.print(" R to ");
@@ -191,8 +200,12 @@ void showTime() {
   minutePixel = round(float(now.minute()) / 5.0) % 12 + 12;
 
   clear();
-  strip.setPixelColor(hourPixel, strip.Color(40 + 40 * level[hourPixel], 30 + 30 * level[hourPixel], 20 + 20 * level[hourPixel]));
-  strip.setPixelColor(minutePixel, strip.Color(40 + 40 * level[minutePixel], 30 + 30 * level[minutePixel], 20 + 20 * level[minutePixel]));
+  //  strip.setPixelColor(hourPixel, strip.Color(40 + 40 * level[hourPixel], 30 + 30 * level[hourPixel], 20 + 20 * level[hourPixel]));
+  //  strip.setPixelColor(minutePixel, strip.Color(40 + 40 * level[minutePixel], 30 + 30 * level[minutePixel], 20 + 20 * level[minutePixel]));
+
+  strip.setPixelColor(hourPixel, strip.Color(level[hourPixel], level[hourPixel], level[hourPixel]));
+  strip.setPixelColor(minutePixel, strip.Color(level[minutePixel], level[minutePixel], level[minutePixel]));
+
   //  lightUp(strip.Color(255, 255, 255));
   strip.show();
 }
@@ -206,7 +219,7 @@ void lightUp(uint32_t color) {
 
 void lightUpEven() {
   for (uint16_t i = 0; i < strip.numPixels(); i++) {
-    strip.setPixelColor(i, strip.Color(40 + 40 * level[i], 30 + 30 * level[i], 20 + 20 * level[i]));
+    strip.setPixelColor(i, strip.Color(level[i], level[i], level[i]));
   }
   strip.show();
 }
