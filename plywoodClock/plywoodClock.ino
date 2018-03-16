@@ -39,7 +39,7 @@ void setup () {
 #endif
   // End of trinket special code
 
-  Serial.begin(9600);
+  Serial.begin(115200);
   strip.begin();
   strip.show(); // Initialize all pixels to 'off'
 
@@ -59,12 +59,7 @@ void setup () {
     // January 21, 2014 at 3am you would call:
     //    rtc.adjust(DateTime(2017, 11, 06, 2, 49, 0));
   }
-  //  rtc.adjust(DateTime(2017, 11, 06, 2, 49, 0));
-
-  //  lightUpEven();
-
-
-  //  while (1);
+ 
   lastRtcCheck = 0;
 }
 
@@ -134,7 +129,7 @@ void loop () {
       strip.show();
     }
 
-    // #3,255,0,125 would set led number 3 to level 255,0,125
+    // $3,255,0,125 would set led number 3 to level 255,0,125
     if (inputString[0] == '$') {
       String temp;
 

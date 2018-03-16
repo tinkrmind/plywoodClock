@@ -32,11 +32,11 @@ void setup() {
     ledPower[i] = 255;
   }
   printArray(Serial.list());
-  String portName = Serial.list()[31];
-  myPort = new Serial(this, portName, 9600);
+  String portName = Serial.list()[32];
+  myPort = new Serial(this, portName, 115200);
 
   size(640, 480);
-  video = new Capture(this, width, height);
+  video = new Capture(this, width, height, Capture.list()[0]);
   video.start();  
   noStroke();
   smooth();
